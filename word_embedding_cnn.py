@@ -12,7 +12,7 @@ from tflearn.data_utils import pad_sequences, to_categorical
 import os
 
 
-class WordEmbedCNN:
+class WordEmbeddingCNN:
 
     def __init__(self, vocab_size, max_document_length, class_label, train_split=0.1):
         self.documents = []
@@ -138,7 +138,7 @@ class WordEmbedCNN:
 
 
 if __name__ == '__main__':
-    w = WordEmbedCNN(vocab_size=5000, max_document_length=500, class_label=['Positive', 'Negative'],
+    w = WordEmbeddingCNN(vocab_size=5000, max_document_length=500, class_label=['Positive', 'Negative'],
                      train_split=0.1)
     model_file = os.path.join(os.getcwd(), 'example-model')
     print(model_file)
