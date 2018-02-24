@@ -8,7 +8,7 @@ from tflearn.data_utils import pad_sequences
 
 class WordEmbeddingLTSM:
 
-    def __init__(self, vocab_size, max_document_length, class_label, train_split=0.1, learning_rate=0.001):
+    def __init__(self, vocab_size, max_document_length, class_label, train_split=0.1, dimensions=256, learning_rate=0.001):
         self.documents = []
         self.labels = []
         self.max_document_length = max_document_length
@@ -18,6 +18,7 @@ class WordEmbeddingLTSM:
         self.vocab = None
         self.model = None
         self.learning_rate = learning_rate
+        self.dimensions = dimensions
 
     def _load_csv(self, csv_file):
         with open(csv_file, 'r') as input_file:
@@ -73,10 +74,10 @@ class WordEmbeddingLTSM:
         y_train, y_test = y[split:], y[:split]
         return X_train, X_test, y_train, y_test
 
-    def _build_model(self, dimensions=256):
+    def _build_model(self):
         net = tflearn.input_data([None, self.max_document_length])
-        net = tflearn.embedding(net, input_dim=self.vocab_size+1, output_dim=dimensions)
-        net = tflearn.lstm(net, dimensions, dropout=0.8)
+        net = tflearn.embedding(net, input_dim=self.vocab_size+1, output_dim=self.dimensions)
+        net = tflearn.lstm(net, self.dimensions, dropout=0.8)
         net = tflearn.fully_connected(net, len(self.class_labels), activation='softmax')
         net = tflearn.regression(net, optimizer='adam', learning_rate=self.learning_rate,
                                  loss='categorical_crossentropy')
