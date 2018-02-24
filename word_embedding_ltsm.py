@@ -2,16 +2,11 @@ import numpy as np
 from collections import Counter
 import re
 import pickle
-import tensorflow as tf
 import tflearn
-from tflearn.layers.core import input_data, dropout, fully_connected
-from tflearn.layers.conv import conv_1d, global_max_pool
-from tflearn.layers.merge_ops import merge
-from tflearn.layers.estimator import regression
 from tflearn.data_utils import pad_sequences
 
 
-class WordEmbeddingCNN:
+class WordEmbeddingLTSM:
 
     def __init__(self, vocab_size, max_document_length, class_label, train_split=0.1, learning_rate=0.001):
         self.documents = []
@@ -78,21 +73,14 @@ class WordEmbeddingCNN:
         y_train, y_test = y[split:], y[:split]
         return X_train, X_test, y_train, y_test
 
-    def _build_model(self):
-        network = input_data(shape=[None, self.max_document_length], name='input')
-        network = tflearn.embedding(network, input_dim=self.vocab_size+1, output_dim=128)
-        branch1 = conv_1d(network, 128, 3, padding='valid', activation='relu', regularizer="L2")
-        branch2 = conv_1d(network, 128, 4, padding='valid', activation='relu', regularizer="L2")
-        branch3 = conv_1d(network, 128, 5, padding='valid', activation='relu', regularizer="L2")
-        network = merge([branch1, branch2, branch3], mode='concat', axis=1)
-        network = tf.expand_dims(network, len(self.class_labels))
-        network = global_max_pool(network)
-        network = dropout(network, 0.5)
-        network = fully_connected(network, len(self.class_labels), activation='softmax')
-        network = regression(network, optimizer='adam', learning_rate=self.learning_rate,
-                             loss='categorical_crossentropy', name='target')
-
-        model = tflearn.DNN(network, tensorboard_verbose=0)
+    def _build_model(self, dimensions=256):
+        net = tflearn.input_data([None, self.max_document_length])
+        net = tflearn.embedding(net, input_dim=self.vocab_size+1, output_dim=dimensions)
+        net = tflearn.lstm(net, dimensions, dropout=0.8)
+        net = tflearn.fully_connected(net, len(self.class_labels), activation='softmax')
+        net = tflearn.regression(net, optimizer='adam', learning_rate=self.learning_rate,
+                                 loss='categorical_crossentropy')
+        model = tflearn.DNN(net, tensorboard_verbose=0)
         return model
 
     def _prepare_document(self, document):
@@ -136,12 +124,11 @@ class WordEmbeddingCNN:
 
 
 if __name__ == '__main__':
-    w = WordEmbeddingCNN(vocab_size=5000, max_document_length=500, class_label=['Positive', 'Negative'],
+    w = WordEmbeddingLTSM(vocab_size=5000, max_document_length=500, class_label=['Positive', 'Negative'],
                      train_split=0.1)
-    import os
-    model_file = os.path.join(os.getcwd(), 'new_model')
+    #import os
+    #model_file = os.path.join(os.getcwd(), 'new_model')
     #print(model_file)
-    w.load_model(model_file, 'vocab.pkl')
-    #w.train_model('example.csv', 'new_model')
-    res = w.predict_document('Most boring tv show ever. What a joke so bad')
-    print(res)
+    #w.load_model(model_file, 'vocab.pkl')
+    w.train_model('example.csv', 'new_model_ltsm')
+    #res = w.predict_document('Most boring tv show ever. What a joke so bad')
